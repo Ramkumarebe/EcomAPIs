@@ -1,0 +1,99 @@
+class User:
+    def __init__(self, first_name, last_name, username, password):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.username = username
+        self.password = password
+        
+class Product:
+    def __init__(self, name, barcode, brand, description, price, available):
+        self.name = name
+        self.barcode = barcode
+        self.brand = brand
+        self.description = description
+        self.price = price
+        self.available = available
+        self.reviews = []
+        
+    def add_review(self, review):
+        self.reviews.append(review)
+
+class Ecommerce:
+    def __init__(self):
+        self.users = []
+        self.products = []
+        
+    def register_user(self, first_name, last_name, username, password):
+        user = User(first_name, last_name, username, password)
+        self.users.append(user)
+        return user
+        
+    def login_user(self, username, password):
+        for user in self.users:
+            if user.username == username and user.password == password:
+                return user
+        return None
+    
+    def upload_products(self, filename):
+        try:
+            with open(filename, 'r') as file:
+                lines = file.readlines()
+                for line in lines[1:]:
+                    fields = line.strip().split(',')
+                    name, barcode, brand, description, price, available = fields
+                    product = Product(name, barcode, brand, description, float(price), available=='TRUE')
+                    self.products.append(product)
+        except Exception as e:
+            print(f"Error reading file {filename}: {e}")
+    
+    def get_products_by_review(self, page_number, page_size, sort_by='rating'):
+        try:
+            start_index = (page_number - 1) * page_size
+            end_index = page_number * page_size
+            if sort_by == 'rating':
+                sorted_products = sorted(self.products, key=lambda p: sum(p.reviews)/len(p.reviews) if len(p.reviews)>0 else 0, reverse=True)
+            elif sort_by == 'price':
+                sorted_products = sorted(self.products, key=lambda p: p.price, reverse=True)
+            else:
+                sorted_products = self.products
+            return sorted_products[start_index:end_index]
+        except Exception as e:
+            print(f"Error getting products by review: {e}")
+        except Exception as e:
+            print(f"Error getting products by review: {e}")
+
+
+ecommerce = Ecommerce()
+
+# Register a user
+user = ecommerce.register_user('Mahi', 'Dhoni', 'msdhoni', 'password')
+
+# Login a user
+user = ecommerce.login_user('msdhoni', 'password')
+
+# Upload products from a CSV file
+ecommerce.upload_products('products.csv')
+
+# Add a review for a product
+product = ecommerce.products[0]
+product.add_review(4.5)
+
+# Get products by review with pagination and sorting
+products = ecommerce.get_products_by_review(page_number=1, page_size=10, sort_by='rating')
+
+#Test
+for product in ecommerce.products:
+    print(product.name,product.reviews,product.brand)
+
+    # Test pagination
+page_number = 1
+page_size = 10
+while True:
+    products = ecommerce.get_products_by_review(page_number=page_number, page_size=page_size, sort_by='rating')
+    if not products:
+        break
+    print(f"Page {page_number}:")
+    for product in products:
+        print(f"{product.name} ({product.brand}) - {sum(product.reviews)/len(product.reviews) if len(product.reviews)>0 else 0}")
+    page_number += 1
+
